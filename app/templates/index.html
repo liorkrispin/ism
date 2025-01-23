@@ -1,0 +1,260 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #232f3e;
+        }
+        .navbar-brand {
+            color: white;
+            font-size: 1.5rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        .table-container {
+            max-width: 100%;
+            overflow-x: auto;
+            margin: 0 auto;
+        }
+        .table {
+            width: 100%;
+            table-layout: auto;
+        }
+        .btn-danger {
+            background-color: #d13212;
+        }
+        .btn-secondary {
+            background-color: #5a5a5a;
+        }
+        .modal-content {
+            border-radius: 8px;
+        }
+        .card {
+            margin: auto;
+            max-width: 100%;
+        }
+        .search-bar {
+            max-width: 700px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+   
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">Server Management</a>
+            <div class="ms-auto">
+                <button class="btn btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="text-center">Server Management Dashboard</h1>
+
+        <div class="d-flex justify-content-between my-3">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServerModal">Add Server</button>
+            <div>
+                <a href="/import" class="btn btn-secondary">Import CSV</a>
+                <a href="/export" class="btn btn-secondary">Export CSV</a>
+            </div>
+        </div>
+
+        <!-- פונקציית חיפוש -->
+        <form method="GET" action="/" class="search-bar my-3">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search servers..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <div class="table-container card p-3">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Server Name</th>
+                        <th>IP Address</th>
+                        <th>Site Name</th>
+                        <th>HTTPS Link</th>
+                        <th>Login User</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for server in servers %}
+                    <tr>
+                        <td>{{ server['id'] }}</td>
+                        <td>{{ server['server_name'] }}</td>
+                        <td>{{ server['ip_address'] }}</td>
+                        <td>{{ server['site_name'] }}</td>
+                        <td>{{ server['https_link'] }}</td>
+                        <td>{{ server['login_user'] }}</td>
+                        <td>{{ server['created_at'] }}</td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="pingServer('{{ server['ip_address'] }}')">Ping</button>
+                            <a href="/rdp/{{ server['id'] }}" class="btn btn-secondary btn-sm">RDP</a>
+                            <form method="POST" action="/delete/{{ server['id'] }}" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div class="modal fade" id="addServerModal" tabindex="-1" aria-labelledby="addServerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="/">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addServerModalLabel">Add New Server</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="serverName" class="form-label">Server Name</label>
+                            <input type="text" class="form-control" id="serverName" name="server_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ipAddress" class="form-label">IP Address</label>
+                            <input type="text" class="form-control" id="ipAddress" name="ip_address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="siteName" class="form-label">Site Name</label>
+                            <input type="text" class="form-control" id="siteName" name="site_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="httpsLink" class="form-label">HTTPS Link</label>
+                            <input type="text" class="form-control" id="httpsLink" name="https_link" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginUser" class="form-label">Login User</label>
+                            <input type="text" class="form-control" id="loginUser" name="login_user" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Ping Results -->
+    <div class="modal fade" id="pingModal" tabindex="-1" aria-labelledby="pingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pingModalLabel">Ping Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="pingResults">Pinging...</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="/create-user">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createUserModalLabel">Create User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <button class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#createUserModal">Create User</button>
+                    <a href="/manage-users" class="btn btn-secondary mb-2">Manage Users</a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function pingServer(ipAddress) {
+            const pingModal = new bootstrap.Modal(document.getElementById('pingModal'));
+            pingModal.show();
+
+            document.getElementById('pingResults').textContent = 'Pinging...';
+
+            fetch(`/ping?ip=${ipAddress}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('pingResults').textContent = data.output;
+                    } else {
+                        document.getElementById('pingResults').textContent = `Error: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('pingResults').textContent = `Error: ${error.message}`;
+                });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
