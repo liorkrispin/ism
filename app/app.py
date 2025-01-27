@@ -20,10 +20,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # הגדרות חיבור למסד הנתונים
 db_config = {
-    'host': 'mariadb-container',  # שם הקונטיינר במקום localhost
+    'host': 'mariadb-container',  # שם הקונטיינר של MariaDB
     'user': 'root',
     'password': 'Adar_112233',
-    'database': 'server_management'
+    'database': 'server_management',
+    'charset': 'utf8mb4',  # קבע את הקידוד
+    'collation': 'utf8mb4_general_ci'  # השוואה נתמכת
 }
 
 # פונקציה לבדוק אם קובץ הוא מסוג CSV
