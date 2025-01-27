@@ -20,7 +20,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # הגדרות חיבור למסד הנתונים
 db_config = {
-    'host': 'localhost',
+    'host': 'mariadb-container',  # שם הקונטיינר במקום localhost
     'user': 'root',
     'password': 'Adar_112233',
     'database': 'server_management'
